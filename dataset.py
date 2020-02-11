@@ -18,13 +18,8 @@ class DarknetDataset(Dataset):
 
         self.img_files = [path.replace("\n", "") for path in self.img_files]
 
-        # print(self.img_files)
-        print(type(self.img_files))
 
         self.label_files = [path.replace("images", "labels").replace(".jpg", ".txt") for path in self.img_files]
-
-        # print(self.label_files)
-        print(type(self.label_files))
 
     def __len__(self):
         return len(self.img_files)
@@ -34,14 +29,13 @@ class DarknetDataset(Dataset):
         label_path = self.label_files[idx]
 
         img = io.imread(img_path)
-        print(img.shape)
+        # print(img.shape)
         img = np.transpose(img, (2, 0, 1))
-        print(img.shape)
+        # print(img.shape)
 
         img = torch.from_numpy(img)
 
-        boxes = torch.from_numpy(np.loadtxt(label_path))
-        print(f"boxes: {boxes.shape}")
+        boxes = torch.from_numpy(np.loadtxt(label_path)).reshape((-1, 5))
 
         sample = {'image': img, 'boxes': boxes}
 
