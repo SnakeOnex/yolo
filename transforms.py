@@ -1,27 +1,20 @@
+import torch
 import torch.nn.functional as F
+from skimage import transform
 
 class PadToSquare():
 
     def __call__(self, sample):
         image, boxes = sample['image'], sample['boxes']
         c, h, w = image.shape
-        print(image.shape)
-
-        print("hello")
-        print("hello")
-        print("hello")
 
         dim_diff = abs(h - w)
-        print(dim_diff)
 
         # coords before padding
         x1 = w * (boxes[:, 1] - boxes[:, 3] / 2)
         y1 = h * (boxes[:, 2] - boxes[:, 4] / 2)
         x2 = w * (boxes[:, 1] + boxes[:, 3] / 2)
         y2 = h * (boxes[:, 2] + boxes[:, 4] / 2)
-
-        print(x1)
-        print(y1)
 
         # padding
         pad1 = dim_diff // 2
@@ -36,7 +29,7 @@ class PadToSquare():
         image = F.pad(image, pad)
 
         c, padded_h, padded_w = image.shape
-        print(f"padded shape: {image.shape}")
+        # print(f"padded shape: {image.shape}")
 
         # adjust for padding
         x1 += pad[0]
@@ -48,14 +41,23 @@ class PadToSquare():
         boxes[:, 2] = ((y1 + y2) / 2) / padded_h
         boxes[:, 3] *= w / padded_w
         boxes[:, 4] *= h / padded_h
-        
+
         return {'image': image, 'boxes': boxes}
 
 class Rescale():
 
-    def __init__(self, output_size):
-        assert isinstance(output_size, (int, tuple))
-        self.output_size = output_size
+    def __init__(self, new_res):
+        self.new_res = new_res
 
-    def __call__(self, image):
-        pass
+    def __call__(self, sample):
+        image, boxes = sample['image'], sample['boxes']
+
+        c, h, w = image.shape
+        print(f"rescale shape: {boxes.shape}")
+
+        image = transform.resize(image, (3, self.new_res, self.new_res))
+
+        return {'image': torch.from_numpy(image), 'boxes': boxes}
+
+
+
