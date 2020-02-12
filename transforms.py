@@ -53,7 +53,7 @@ class Rescale():
         image, boxes = sample['image'], sample['boxes']
 
         c, h, w = image.shape
-        print(f"rescale shape: {boxes.shape}")
+        # print(f"rescale shape: {boxes.shape}")
 
         image = transform.resize(image, (3, self.new_res, self.new_res))
 
