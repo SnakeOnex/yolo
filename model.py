@@ -3,9 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class YOLO(nn.Module):
-    def __init__(self, classes):
+    def __init__(self, classes, bboxes):
         super(YOLO, self).__init__()
         self.classes = classes
+        self.bboxes = bboxes
 
         self.conv1 = nn.Conv2d(3, 16, (3, 3), padding=1)
         self.pool = nn.MaxPool2d(2, 2)
@@ -19,7 +20,7 @@ class YOLO(nn.Module):
         self.conv9 = nn.Conv2d(1024, 1024, (3, 3), padding=1)
         self.fc1 = nn.Linear(7 * 7 * 1024, 256)
         self.fc2 = nn.Linear(256, 4096)
-        self.output = nn.Linear(4096, 7 * 7 * (5 * 2 + self.classes))
+        self.output = nn.Linear(4096, 7 * 7 * (5 * self.bboxes + self.classes))
 
 
     def forward(self, x):
@@ -43,9 +44,30 @@ class YOLO(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = torch.sigmoid(self.output(x))
-        x = x.view(-1, 7, 7, 5 * 2 + self.classes)
+        x = x.view(-1, 7, 7, 5 * self.bboxes + self.classes)
         return x
 
 
 if __name__ == '__main__':
-    net = YOLO(4)
+    from dataset import DarknetDataset
+    from torchvision import transforms
+    from transforms import PadToSquare, Rescale
+    from torch.utils.data import DataLoader
+
+    train_path = "data/train.txt"
+
+    composed = transforms.Compose([PadToSquare(), Rescale(448)])
+    image_dataset = DarknetDataset(train_path, transform=composed)
+
+    dataloader = DataLoader(image_dataset, batch_size=1, shuffle=False, num_workers=4)
+
+    classes = 4
+    bboxes = 2
+    net = YOLO(classes, bboxes)
+
+    for i_batch, sample_batched in enumerate(dataloader):
+        print(i_batch, sample_batched['image'].size(), sample_batched['boxes'].size())
+        output = net(sample_batched['image'].float())
+        print(output.shape)
+        # check output tensor size, should be [1, 7, 7, 14]
+        break
