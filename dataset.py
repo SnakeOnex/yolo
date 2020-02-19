@@ -36,7 +36,6 @@ class DarknetDataset(Dataset):
         img = torch.from_numpy(img)
 
         boxes = torch.from_numpy(np.loadtxt(label_path)).reshape((-1, 5))
-
         sample = {'image': img, 'boxes': boxes}
 
         if self.transform:
@@ -45,16 +44,17 @@ class DarknetDataset(Dataset):
         return sample
 
 if __name__ == '__main__':
-    from transforms import PadToSquare, Rescale
+    from transforms import PadToSquare, Rescale, SampleToYoloTensor
     from torchvision import transforms
     # load data
     train_path = "data/train.txt"
     input_size = 448
 
-    composed = transforms.Compose([PadToSquare(), Rescale(input_size)])
+    composed = transforms.Compose([PadToSquare(), Rescale(input_size), SampleToYoloTensor(7, 4)])
     image_dataset = DarknetDataset(train_path, transform=composed)
 
     print(len(image_dataset))
-    image, boxes = image_dataset[5]['image'], image_dataset[5]['boxes']
+    sample = image_dataset[0]
+    image, boxes = sample['image'], sample['boxes']
     print(image.shape)
     print(boxes.shape)
