@@ -69,10 +69,8 @@ class SampleToYoloTensor():
         image, boxes = sample['image'], sample['boxes']
 
         label = torch.zeros((self.S, self.S, 5 + self.C))
-        print(label.shape)
 
         cell_size = 1.0 / 7.0
-        print(f'cell size: {cell_size}')
 
         # iterate over all bounding boxes and fit them in respective cells
         ## if two fall into same cell I guess override the first one? (maybe 7x7 is not good enough)
