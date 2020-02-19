@@ -44,3 +44,17 @@ class DarknetDataset(Dataset):
 
         return sample
 
+if __name__ == '__main__':
+    from transforms import PadToSquare, Rescale
+    from torchvision import transforms
+    # load data
+    train_path = "data/train.txt"
+    input_size = 448
+
+    composed = transforms.Compose([PadToSquare(), Rescale(input_size)])
+    image_dataset = DarknetDataset(train_path, transform=composed)
+
+    print(len(image_dataset))
+    image, boxes = image_dataset[5]['image'], image_dataset[5]['boxes']
+    print(image.shape)
+    print(boxes.shape)
