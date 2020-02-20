@@ -7,6 +7,7 @@ from utils import show_boxes
 from transforms import PadToSquare, Rescale, SampleToYoloTensor
 
 from model import YOLO
+from loss import YOLOLoss
 
 # load data
 path = "data"

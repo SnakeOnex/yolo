@@ -51,12 +51,12 @@ class YOLO(nn.Module):
 if __name__ == '__main__':
     from dataset import DarknetDataset
     from torchvision import transforms
-    from transforms import PadToSquare, Rescale
+    from transforms import PadToSquare, Rescale, SampleToYoloTensor
     from torch.utils.data import DataLoader
 
     train_path = "data/train.txt"
 
-    composed = transforms.Compose([PadToSquare(), Rescale(448)])
+    composed = transforms.Compose([PadToSquare(), Rescale(448), SampleToYoloTensor(7, 4)])
     image_dataset = DarknetDataset(train_path, transform=composed)
 
     dataloader = DataLoader(image_dataset, batch_size=1, shuffle=False, num_workers=4)
