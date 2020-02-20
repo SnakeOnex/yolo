@@ -31,10 +31,16 @@ class YOLOLoss(nn.Module):
         print(f"target_box: {target_box.shape}")
 
         pred_class = pred[:, :, :, (self.B*5):(self.B*5+self.C)] # -1 x S x S x C
-        pred_box = pred[:, :, :, 0:(self.B*5)].view(-1, 7, 7, self.B, 5) # -1 x S x S x B x 5
+        pred_conf_box = pred[:, :, :, 0:(self.B*5)].view(-1, 7, 7, self.B, 5) # -1 x S x S x B x 5
 
         print(f"pred_class: {pred_class.shape}")
+        print(f"pred_conf_box: {pred_conf_box.shape}")
+
+        pred_box = pred_conf_box[:, :, :, :, 1:5] # -1 x S x S x B x 4
+
         print(f"pred_box: {pred_box.shape}")
+
+
         pass
 
 
