@@ -7,8 +7,22 @@ class YOLOLoss(nn.Module):
         self.C = classes
         self.B = bboxes
 
-    def compute_iou(self, box1, box2):
+    def compute_iou(self, target_box, pred_boxes):
         pass
+
+    def xywh_to_minmax(self, xy, wh):
+        """
+        args:
+        xy: -1 x S x S x 2
+        wh: -1 x S x S x 2
+        """
+
+        xy_min = xy - (wh / 2)
+        xy_max = xy + (wh / 2)
+
+        return xy_min, xy_max
+
+
 
     def forward(self, pred, target):
         """
@@ -37,8 +51,19 @@ class YOLOLoss(nn.Module):
         print(f"pred_conf_box: {pred_conf_box.shape}")
 
         pred_box = pred_conf_box[:, :, :, :, 1:5] # -1 x S x S x B x 4
+        target_box = target_box.unsqueeze(3)
 
         print(f"pred_box: {pred_box.shape}")
+        print(f"target_box: {target_box.shape}")
+
+        target_xy, target_wh = target_box[:, :, :, :, 0:2], target_box[:, :, :, :, 2:4]
+        pred_xy, pred_wh = pred_box[:, :, :, :, 0:2], pred_box[:, :, :, :, 2:4]
+
+        target_xy_min, target_xy_max = self.xywh_to_minmax(target_xy, target_wh)
+        pred_xy_min, pred_xy_max = self.xywh_to_minmax(pred_xy, pred_wh)
+
+        print(f"target_xy_min: {target_xy_min.shape}")
+        print(f"pred_xy_min: {pred_xy.shape}")
 
 
         pass
