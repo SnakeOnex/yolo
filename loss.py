@@ -7,8 +7,13 @@ class YOLOLoss(nn.Module):
         self.C = classes
         self.B = bboxes
 
-    def compute_iou(self, target_box, pred_boxes):
-        pass
+    def compute_iou(self, pred_xy_min, pred_xy_max, target_xy_min, target_xy_max):
+        intersect_mins = torch.max(pred_xy_min, target_xy_min)
+        intersect_maxes = torch.min(pred_xy_max, target_xy_max)
+        intersect_wh = torch.clamp(intersect_maxes - intersect_mins, min=0.) # -1 x 7 x 7 x B x 2
+        intersect_areas = intersect_wh[:, :, :, :, 0] * intersect_wh[:, :, :, :, 1]
+
+        print(f"intersect_wh: {intersect_wh.shape}")
 
     def xywh_to_minmax(self, xy, wh):
         """
@@ -64,6 +69,8 @@ class YOLOLoss(nn.Module):
 
         print(f"target_xy_min: {target_xy_min.shape}")
         print(f"pred_xy_min: {pred_xy.shape}")
+
+        iou = self.compute_iou(pred_xy_min, pred_xy_max, target_xy_min, target_xy_max)
 
 
         pass
