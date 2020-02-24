@@ -14,7 +14,6 @@ class YOLOLoss(nn.Module):
         ret: iou -1 x S x S x B
         """
         intersect_mins = torch.max(pred_xy_min, target_xy_min)
-        print(f"intersect_mins: {intersect_mins.shape}")
         intersect_maxes = torch.min(pred_xy_max, target_xy_max)
         intersect_wh = torch.clamp(intersect_maxes - intersect_mins, min=0.) # -1 x 7 x 7 x B x 2
         intersect_areas = intersect_wh[:, :, :, :, 0] * intersect_wh[:, :, :, :, 1]
@@ -115,6 +114,7 @@ class YOLOLoss(nn.Module):
         box_loss = torch.sum(box_loss)
         # print("box_loss: ", box_loss)
 
+        # print(f"conf: {conf_loss}, clas: {class_loss}, box: {box_loss}")
         loss = conf_loss + class_loss + box_loss
         return loss
 
