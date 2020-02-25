@@ -6,9 +6,9 @@
   - [X] N x 5 -> S x S x (5 + C) transform for labels
 - [X] forward pass
 - [X] IoU & cost function class
-- [o] training:
+- [X] training:
   - [X] training loop
-  - [ ] training checkpoints
+  - [X] training checkpoints
 - [ ] weight loading
 - [ ] inference
 - [ ] data augmentation
