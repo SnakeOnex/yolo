@@ -1,7 +1,8 @@
+import os
+
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
-
 from dataset import DarknetDataset
 from utils import show_boxes
 from transforms import PadToSquare, Rescale, SampleToYoloTensor
@@ -17,6 +18,9 @@ valid_path = "data/valid.txt"
 names_path = "data/classes.names"
 
 input_size = 448
+bs = 16
+epochs = 1
+checkpoint_interval = 1
 
 ## transforms
 composed = transforms.Compose([PadToSquare(), Rescale(input_size), SampleToYoloTensor(7, classes)])
@@ -27,68 +31,71 @@ valid_data = DarknetDataset(valid_path, transform=composed)
 print(len(train_data))
 print(len(valid_data))
 
+def save_checkpoint(path):
+    path = f'checkpoints/{path}'
+    torch.save({
+        'epoch': epoch,
+        'model_state_dict': yolo.state_dict(),
+        'optim_state_dict': optim.state_dict(),
+        }, path)
 
+    print('saved to: ', path)
 
-train_dataloader = DataLoader(train_data, batch_size=8, shuffle=False, num_workers=0)
-valid_dataloader = DataLoader(valid_data, batch_size=8, shuffle=False, num_workers=0)
+def load_checkpoint(path):
+    checkpoint = torch.load(path)
+    yolo.load_state_dict(checkpoint['model_state_dict'])
+    # optim.load_state_dict(checkpoint['optim_state_dict'])
+
+    print("loaded checkpoint: ", path)
+
+train_dataloader = DataLoader(train_data, batch_size=bs, shuffle=False, num_workers=0)
+valid_dataloader = DataLoader(valid_data, batch_size=bs, shuffle=False, num_workers=0)
 
 # show_boxes(image, boxes)
 yolo = YOLO(4, 2)
 loss_fn = YOLOLoss(classes, 2)
 
-optim = torch.optim.SGD(yolo.parameters(), lr=5 * 1e-5)
+optim = torch.optim.SGD(yolo.parameters(), lr=0.001, momentum=0.9)
 
-for i in range(20):
-    print("epoch: ", i)
+# checkpoint_path = "checkpoints/test2.checkpoint"
+# yolo.load_state_dict(torch.load(checkpoint_path))
+# print("loading checkpoint")
 
-    train_loss = 0
-    valid_loss = 0.
-    for i_batch, sample_batched in enumerate(valid_dataloader):
-        # # print(i_batch, sample_batched['image'].size(), sample_batched['boxes'].size())
+for epoch in range(epochs):
+    print("epoch: ", epoch)
 
-        output = yolo(sample_batched['image'].float())
-        # # print(output.shape)
+    # validation set eval
+    with torch.no_grad():
+        valid_loss = 0.
+        for i_batch, sample_batched in enumerate(valid_dataloader):
 
-        valid_loss += loss_fn.forward(output, sample_batched['boxes'])
-        # # print(f"{i}: {i_batch} loss: {loss}")
+            output = yolo(sample_batched['image'].float())
 
-    valid_loss /= len(valid_data)
-    print("valid_loss: ", valid_loss)
+            valid_loss += loss_fn.forward(output, sample_batched['boxes'])
 
+        valid_loss /= len(valid_data) // 8
+        print("valid_loss: ", valid_loss)
+
+    # train set epoch
+    train_loss = 0.
     for i_batch, sample_batched in enumerate(train_dataloader):
-        # print(i_batch, sample_batched['image'].size(), sample_batched['boxes'].size())
 
         output = yolo(sample_batched['image'].float())
-        # print(output.shape)
 
         loss = loss_fn.forward(output, sample_batched['boxes'])
         train_loss += loss
 
-        if i_batch == 0 and i == 0:
-            print("train_loss: ", train_loss)
-        # print(f"{i}: {i_batch} loss: {loss}")
+        print(f"{epoch}: {i_batch} loss: {loss}")
 
 
+        optim.zero_grad()
         loss.backward()
+
         optim.step()
 
-    train_loss /= len(train_data)
+    train_loss /= len(train_data) // 8
     print("train_loss: ", train_loss)
 
-    if i == 1:
-        print("changing lr")
-        optim = torch.optim.SGD(yolo.parameters(), lr=1e-6)
-    elif i == 2:
-        print("changing lr2")
-        optim = torch.optim.SGD(yolo.parameters(), lr=1e-7 * 5)
-    elif i == 6:
-        print("changing lr3")
-        optim = torch.optim.SGD(yolo.parameters(), lr=1e-7)
-
-
-
-
-## i want a 448x448 image here
-
-# forward pass of the network
-
+    if epoch % checkpoint_interval == 0:
+        print("Saving checkpoint")
+        torch.save(yolo.state_dict(), f"checkpoints/yolo_ckpt_{epoch}.pth")
